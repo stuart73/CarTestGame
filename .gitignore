@@ -338,3 +338,32 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+*.fbx
+/art/tracks
+/Assets/MyAssets
+/Assets/Plugins/GitHub/Editor
+/Assets/SampleScenes/AudioMixers
+/Assets/SampleScenes/Materials
+/Assets/SampleScenes/Menu
+/Assets/SampleScenes/Models/Materials
+/Assets/SampleScenes/Navmesh
+/Assets/SampleScenes
+/Assets/Scenes
+/Assets/Standard Assets
+/build
+/CarPhysics
+/ClassLibrary1
+/Library
+/phy1
+/Phy2
+/ProjectSettings
+/Temp
+/TestNativeDll
+/TrackBuilder
+/README.md
+/CarTestGame.sln
+/Assembly-CSharp.csproj
+/Assembly-CSharp-firstpass.csproj
+/Assembly-CSharp-Editor-firstpass.csproj
+/Assets/.gitignore
+/Assets/New Terrain.asset
