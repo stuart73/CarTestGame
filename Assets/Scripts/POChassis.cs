@@ -44,10 +44,10 @@ namespace Assets.Scripts
 		const int NUM_POINT_TYPES = 5;
 		const int NUM_CCS = 2;
 
-		FVector MESH_OFFSET = new FVector(0, 0.3f, 0.235f);   // Hand-picked offset for centre of car
-		FVector COG_OFFSET = new FVector(0, 0, 0.1685f); // Hand-picked offset for Centre of Gravity
 
-	
+		const float COG_Z_OFFSET = 0.1685f;
+		FVector MESH_OFFSET = new FVector(0, 0.3f, 0.235f);   // Hand-picked offset for centre of car
+		FVector COG_OFFSET = new FVector(0, 0, COG_Z_OFFSET); // Hand-picked offset for Centre of Gravity
 
 		public CPOChassis()
 		{
@@ -78,14 +78,27 @@ namespace Assets.Scripts
 
 			//****************************************************
 			// Initialise wheels
-			FVector wheel_size = new FVector(0.4f, 0.95f, 0.95f);
+			//FVector wheel_size = new FVector(0.4f, 0.95f, 0.95f);
+
+			// SRH slight smaller wheels make the car feel more menevable
+			FVector wheel_size = new FVector(0.4f, 0.68f, 0.68f);
+
+
 			//	float	wheel_mass = mMass / 50.f;
 			float wheel_mass = mMass / 50.0f * 5.0f;
 
-			mWheels[0].Init(PhysicsParameters.WORLD_TO_PHYSICS(new FVector(-1.0f, 0.0f, 1.685f)).Minus(mCoGOffset), wheel_size, wheel_mass, this, 0);
-			mWheels[1].Init(PhysicsParameters.WORLD_TO_PHYSICS(new FVector(1.0f, 0.0f, 1.685f)).Minus(mCoGOffset), wheel_size, wheel_mass, this, 1);
-			mWheels[2].Init(PhysicsParameters.WORLD_TO_PHYSICS(new FVector(-1.0f, 0.0f, -1.685f)).Minus(mCoGOffset), wheel_size, wheel_mass, this, 2);
-			mWheels[3].Init(PhysicsParameters.WORLD_TO_PHYSICS(new FVector(1.0f, 0.0f, -1.685f)).Minus(mCoGOffset), wheel_size, wheel_mass, this, 3);
+			float wheel_x_offset = 1.0f;
+			float wheel_z_offset = 1.685f;
+
+		//	wheel_x_offset /= 2;
+			//wheel_z_offset /= 2;
+
+
+
+			mWheels[0].Init(PhysicsParameters.WORLD_TO_PHYSICS(new FVector(-wheel_x_offset, 0.0f, wheel_z_offset)).Minus(mCoGOffset), wheel_size, wheel_mass, this, 0);
+			mWheels[1].Init(PhysicsParameters.WORLD_TO_PHYSICS(new FVector(wheel_x_offset, 0.0f, wheel_z_offset)).Minus(mCoGOffset), wheel_size, wheel_mass, this, 1);
+			mWheels[2].Init(PhysicsParameters.WORLD_TO_PHYSICS(new FVector(-wheel_x_offset, 0.0f, -wheel_z_offset)).Minus(mCoGOffset), wheel_size, wheel_mass, this, 2);
+			mWheels[3].Init(PhysicsParameters.WORLD_TO_PHYSICS(new FVector(wheel_x_offset, 0.0f, -wheel_z_offset)).Minus(mCoGOffset), wheel_size, wheel_mass, this, 3);
 
 			for (c0 = 0; c0 < 4; c0++)
 				mWheels[c0].Reset();
@@ -129,6 +142,29 @@ namespace Assets.Scripts
 			}
 		}
 
+		public override void Reset()
+        {
+			base.Reset();
+			for (int c0 = 0; c0 < 4; c0++)
+				mWheels[c0].Reset();
+
+			//****************************************************
+			// Reset Engine and Steering stuff
+			mThrottle = 0;
+			mBraking = 0;
+
+			mDesiredSteeringAngle = 0;
+			mSteeringWheelPos = 0;
+			mDesiredThrottle = 0;
+			mDesiredBraking = 0;
+			mSteeringAssistOffset = 0;
+			mLastPitchOnGround = 0;
+			mGear = 1;
+			mChangingGear = false;
+			mEngineRPM = 0;
+
+		}
+
 		public void SetDriveType(EDriveType type)
         {
 			mDriveType = type;
@@ -147,9 +183,11 @@ namespace Assets.Scripts
 
 
 		// Access Functions
-		public void SetSteeringAngle(float v)
+		public void SetDesiredSteeringAngle(float v)
 		{
 			float angle = v * PhysicsParameters.PC_MAX_TURNING_CIRCLE * GetSteeringLock();
+
+			//float angle = v;
 			mDesiredSteeringAngle = angle;
 			mSteeringWheelPos = v;
 		}
@@ -877,11 +915,14 @@ namespace Assets.Scripts
 			if (mInputParams.mAnglesValid)
 			{
 				// get car yaw;
-				float yaw = (float)-Math.Atan2(mOrientation.Row[0].Z, mOrientation.Row[0].X);
+				//float yaw = (float)-Math.Atan2(mOrientation.Row[0].Z, mOrientation.Row[0].X);
 
-				CEulerAngles angles = new CEulerAngles(mOrientation);
+				//CEulerAngles angles = new CEulerAngles(mOrientation);
 
-				mSteeringAssistOffset = (mInputParams.mTrackYaw - angles.mYaw);
+				//mSteeringAssistOffset = (mInputParams.mTrackYaw - angles.mYaw);
+
+				mSteeringAssistOffset = mInputParams.mTrackYaw; // - angles.mYaw);
+
 
 				while (mSteeringAssistOffset > (float)Math.PI)
 					mSteeringAssistOffset -= 2.0f * (float)Math.PI;
@@ -1164,20 +1205,20 @@ namespace Assets.Scripts
 		}
 
 		// Debug methods
-		public virtual void SetupDebugCuboids()
+		public override void SetupDebugCuboids()
 		{
 
 		}
-		public virtual FVector GetDebugCuboidPosOffset(int num)
+		public override FVector GetDebugCuboidPosOffset(int num)
 		{
 			return new FVector(1, 1, 1);
 
 		}
-		public virtual FMatrix GetDebugCuboidOriOffset(int num)
+		public override FMatrix GetDebugCuboidOriOffset(int num)
 		{
 			return new FMatrix(); //
 		}
-		public virtual void DebugNotifyImpulse(int point, int type, FVector impulse)
+		public override void DebugNotifyImpulse(int point, int type, FVector impulse)
 		{
 
 		}

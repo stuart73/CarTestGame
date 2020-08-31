@@ -37,8 +37,8 @@ namespace Assets.Scripts
 			mMomentOfInertia = new FMatrix(); ;
 			mMomentOfInertiaInverse = new FMatrix(); ;
 
-			mCoefficientOfRestitution = PhysicsParameters.PC_DEFAULT_COEFFICIENT_OF_RESTITUTION;
-			mCoefficientOfFriction = PhysicsParameters.PC_DEFAULT_COEFFICIENT_OF_FRICTION;
+			//mCoefficientOfRestitution = PhysicsParameters.PC_DEFAULT_COEFFICIENT_OF_RESTITUTION;
+			//mCoefficientOfFriction = PhysicsParameters.PC_DEFAULT_COEFFICIENT_OF_FRICTION;
 
 			mTimeStep = 1 / 60.0f;
 			mIterations = 20;
@@ -61,9 +61,10 @@ namespace Assets.Scripts
 				Model();
 		}
 
-		public void Clear()
+		public virtual void Reset()
 		{
-			// nada
+			mLinearMomentum = new FVector();
+			mAngularMomentum = new FVector();
 		}
 
 		public FVector GetPos()  
@@ -176,6 +177,8 @@ namespace Assets.Scripts
 
 		public virtual void Model()
 		{
+			//Rigidbody r = new Rigidbody();
+
 			// Apply Gravity
 			ApplyForce(mPos, new FVector(0, -Gravity() * mMass, 0), 8, 0);
 
@@ -244,32 +247,47 @@ namespace Assets.Scripts
 			return true;
 		}
 
+		public bool LineIntersectionTest(GameObject forObject, FVector start, FVector end, FVector ip, FVector normal)
+		{
+			if (forObject)
+			{
+				Collider collider = forObject.GetComponent<MeshCollider>();
+
+				RaycastHit cast;
+
+				Vector3 startPos = new Vector3(start.X, start.Y, start.Z);
+
+				FVector dir = end.Minus(start);
+				dir.Normalise();
+
+				Vector3 direction = new Vector3(dir.X, dir.Y, dir.Z);
+
+				Ray myRay = new Ray(startPos, direction);
+				bool result = collider.Raycast(myRay, out cast, 10.0f);
+
+				if (result == true)
+				{
+					Vector3 ip2 = myRay.GetPoint(cast.distance);
+					ip.X = ip2.x; ip.Y = ip2.y; ip.Z = ip2.z;
+					normal.X = cast.normal.x; normal.Y = cast.normal.y; normal.Z = cast.normal.z;
+
+					return true;
+				}
+			}
+			return false;
+		}
+
 		public bool LineIntersectionTest(FVector start, FVector end, FVector ip, FVector normal)
 		{
-			Collider collider = featureTrack.GetComponent<MeshCollider>();
+			bool result = LineIntersectionTest(featureTrack3, start, end, ip, normal);
+			if (result == true) return true;
 
-			RaycastHit cast;
+			result = LineIntersectionTest(featureTrack2, start, end, ip, normal);
+			if (result == true) return true;
 
-			Vector3 startPos = new Vector3(start.X, start.Y, start.Z);
+			result = LineIntersectionTest(featureTrack, start, end, ip, normal);
 
-			FVector dir = end.Minus(start);
-			dir.Normalise();
-
-			Vector3 direction = new Vector3(dir.X, dir.Y, dir.Z);
-
-			Ray myRay = new Ray(startPos, direction);
-			bool result = collider.Raycast(myRay, out cast, 10.0f);
-
-			if (result == true)
-			{
-				Vector3 ip2 = myRay.GetPoint(cast.distance);
-				ip.X = ip2.x; ip.Y = ip2.y; ip.Z = ip2.z;
-				normal.X = cast.normal.x; normal.Y = cast.normal.y; normal.Z = cast.normal.z;
-
-				return true;
-			}
-
-			return false;
+			return result;
 		}
 
 
@@ -553,13 +571,16 @@ namespace Assets.Scripts
 		public FMatrix mMomentOfInertiaInverse;
 
 		// properties
-		float mCoefficientOfRestitution;
-		float mCoefficientOfFriction;
+		// float mCoefficientOfRestitution;
+		// float mCoefficientOfFriction;
 
 		public float mTimeStep;
 		int mIterations;
 
 		public GameObject featureTrack;
+		public GameObject featureTrack2;
+		public GameObject featureTrack3;
+
 
 		public TestLandscape testLandscape;
 
